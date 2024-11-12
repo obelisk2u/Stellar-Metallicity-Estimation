@@ -185,12 +185,12 @@ df <- na.omit(data)
 colnames(df) <- c("tmp", "mh", "logg", "mag", "ra", "dec", "par", "ra_e", "dec_e", "par_e")
 df$d <- 1000/df$par
 
-df <- df |> filter(d < 25000)
+df <- df |> filter(abs(d) < 25000)
 
 df_no_error <- df |>
-  filter(ra_e <0.075, dec_e <0.075, par_e < 0.075)
+  filter(ra_e <0.02, dec_e <0.02, par_e < 0.02)
 
-distance <- 1/(df$par/1000) #divide the parallax by 1000 to convert milliarcseconds to arcseconds
+distance <- 1/(df_no_error$par/1000) #divide the parallax by 1000 to convert milliarcseconds to arcseconds
 
 # Convert RA and Dec to radians
 ra_rad <- df_no_error$ra*pi/180
@@ -201,24 +201,56 @@ x <- distance * cos(dec_rad) * cos(ra_rad)
 y <- distance * cos(dec_rad) * sin(ra_rad)
 z <- distance * sin(dec_rad)
 
-p <- plot_ly(x = x, y = y, z = z, type = "scatter3d", mode = "markers", marker = list(size = 1.5, color = "yellow"))
+b <- plot_ly(x = x, y = y, z = z, type = "scatter3d", mode = "markers", marker = list(size = 1.5, color = "yellow"))
 
 # Modify axis limits for 3D plot
+b <- b %>% layout(
+  scene = list(
+    bgcolor = 'black',
+    xaxis = list(range = c(-2e4, 2e4)),  # Set x-axis limits
+    yaxis = list(range = c(-2.5e4, 2.5e4)),  # Set y-axis limits
+    zaxis = list(range = c(-2e4, 2e4))   # Set z-axis limits
+  )
+)
+b
+
+#Make a pretty graph with earth in it
+coords <- data.frame(x, y, z,
+  source = rep("dataset", length(x)),
+  size = rep(1.5, length(x))# Assign the label 'dataset' to each point
+)
+
+df <- df |> filter(abs(d) > 1000)
+# Define the extra point (for example, at coordinates 6, 2, 3)
+earth <- data.frame(
+  x = 0, 
+  y = 0, 
+  z = 0,
+  source = "earth",
+  size = 4
+  # Label the extra point as 'extra_point'
+)
+
+df_with_earth <- rbind(coords, earth)
+
+p <- plot_ly(data = df_with_earth, x = ~x, y = ~y, z = ~z, type = "scatter3d", mode = "markers", marker = list(size = ~size), color = ~source, colors = c("yellow", "deepskyblue2"))
+
 p <- p %>% layout(
   scene = list(
     bgcolor = 'black',
-    xaxis = list(range = c(-1e6, 1e6)),  # Set x-axis limits
-    yaxis = list(range = c(-5e6, 5e6)),  # Set y-axis limits
-    zaxis = list(range = c(-4e6, 4e6))   # Set z-axis limits
+    xaxis = list(range = c(-2e4, 2e4)),  # Set x-axis limits
+    yaxis = list(range = c(-2.5e4, 2.5e4)),  # Set y-axis limits
+    zaxis = list(range = c(-2e4, 2e4))   # Set z-axis limits
   )
 )
 p
 ```
 
-  
-  
-  
-  
+
+conclusions:
+we found sweet spot of 500 stars
+we need to get less than 25000 parsecs to stay within the milkyway
+error of ra, dec and parallax now it makes sense
   
   
   
