@@ -1,0 +1,224 @@
+```{r}
+library(dplyr)
+library(scatterplot3d)
+library(plotly)
+library(car)
+library(caret)
+set.seed(123)
+```
+
+UNITS:
+  milliarcseconds
+  log(Fe/H)
+  Kelvin
+  no units
+
+Lets convert the polar coordinates to cartesian
+```{r}
+data <- read.csv("star_data_coords.csv")
+df <- na.omit(data)
+
+colnames(df) <- c("d", "tmp", "mh", "logg", "mag", "ra", "dec", "par")
+
+distance <- 1/(df$par/1000) #divide the parallax by 1000 to convert milliarcseconds to arcseconds
+
+# Convert RA and Dec to radians
+ra_rad <- df$ra*pi/180
+dec_rad <- df$dec*pi/180
+
+# Calculate x, y, z coordinates
+x <- distance * cos(dec_rad) * cos(ra_rad)
+y <- distance * cos(dec_rad) * sin(ra_rad)
+z <- distance * sin(dec_rad)
+
+coords <- data.frame(x = x, y = y, z = z)
+
+par(bg = "grey10",
+    mar = c(5, 5, 2, 2))
+scatterplot3d(x, y, z, pch = 16, color = "yellow", 
+              xlim = c(-1e6, 1e6), ylim = c(-5e6, 5e6), zlim = c(-4e6, 4e6), 
+              cex.symbols = 0.3,
+              col.main = "white",   # Title text color
+              col.lab = "white",    # Axis labels color
+              col.axis = "white",
+              main = "Star distance from Earth (pc)")
+
+p <- plot_ly(x = x, y = y, z = z, type = "scatter3d", mode = "markers", marker = list(size = 1.5, color = "yellow"))
+
+# Modify axis limits for 3D plot
+p <- p %>% layout(
+  scene = list(
+    bgcolor = 'black',
+    xaxis = list(range = c(-1e6, 1e6)),  # Set x-axis limits
+    yaxis = list(range = c(-5e6, 5e6)),  # Set y-axis limits
+    zaxis = list(range = c(-4e6, 4e6))   # Set z-axis limits
+  )
+)
+p
+```
+  
+
+Take errors into account
+```{r}
+data <- read.csv("star_data_e.csv")
+df <- na.omit(data)
+
+colnames(df) <- c("tmp", "mh", "logg", "mag", "ra", "dec", "par", "ra_e", "dec_e", "par_e")
+
+
+
+ggplot(df, aes(x = ra_e)) +
+  geom_histogram(binwidth = 0.05, fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of RA Errors", x = "Error", y = "Frequency") +
+  theme_minimal()
+
+ggplot(df, aes(x = dec_e)) +
+  geom_histogram(binwidth = 0.05, fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Dec Errors", x = "Error", y = "Frequency") +
+  theme_minimal()
+
+ggplot(df, aes(x = par_e)) +
+  geom_histogram(binwidth = 0.05, fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Parallax Errors", x = "Error", y = "Frequency") +
+  theme_minimal()
+
+
+
+df_no_error <- df |>
+  filter(ra_e <0.075, dec_e <0.075, par_e < 0.075)
+
+distance <- 1/(df$par/1000) #divide the parallax by 1000 to convert milliarcseconds to arcseconds
+
+# Convert RA and Dec to radians
+ra_rad <- df_no_error$ra*pi/180
+dec_rad <- df_no_error$dec*pi/180
+
+# Calculate xyz coordinates
+x <- distance * cos(dec_rad) * cos(ra_rad)
+y <- distance * cos(dec_rad) * sin(ra_rad)
+z <- distance * sin(dec_rad)
+
+coords <- data.frame(x = x, y = y, z = z)
+
+par(bg = "grey10",
+    mar = c(5, 5, 2, 2))
+
+scatterplot3d(x, y, z, pch = 16, color = "yellow", 
+              xlim = c(-1e6, 1e6), ylim = c(-5e6, 5e6), zlim = c(-4e6, 4e6), 
+              cex.symbols = 0.3,
+              col.main = "white",   # Title text color
+              col.lab = "white",    # Axis labels color
+              col.axis = "white",
+              main = "Star distance from Earth (pc)")
+
+p <- plot_ly(x = x, y = y, z = z, type = "scatter3d", mode = "markers", marker = list(size = 1.5, color = "yellow"))
+
+# Modify axis limits for 3D plot
+p <- p %>% layout(
+  scene = list(
+    bgcolor = 'black',
+    xaxis = list(range = c(-1e6, 1e6)),  # Set x-axis limits
+    yaxis = list(range = c(-5e6, 5e6)),  # Set y-axis limits
+    zaxis = list(range = c(-4e6, 4e6))   # Set z-axis limits
+  )
+)
+p
+```
+
+  
+  
+  
+```{r}
+data <- read.csv("star_data_coords.csv")
+df <- na.omit(data)
+
+colnames(df) <- c("d", "tmp", "mh", "logg", "mag", "ra", "dec", "par")
+df$d <- 1000/df$par
+
+linear <- lm(mh ~ par + tmp + logg + mag, data = df)
+summary(linear)
+```
+***Talk about boring things***
+
+Wow so many significant variables, lets see why
+```{r}
+#check variance inflation factor (VIF)
+vif <- vif(linear)
+vif
+
+#normalize data
+linear_data <- df |>
+  select(mh, par, tmp, logg, mag)
+
+preproc_l <- preProcess(linear_data, method = c("center", "scale"))
+linear_data_norm <- predict(preproc_l, linear_data)
+
+linear_norm <- lm(mh ~ par + tmp + logg + mag, data = linear_data_norm)
+summary(linear_norm)
+
+#lower sample size
+subset_linear <- linear_data_norm |> sample_n(500)
+linear_small <- lm(mh ~ par + tmp + logg + mag, data = subset_linear)
+summary(linear_small)
+```
+
+***Talk about how to pick the right sample size***
+  
+Try to find how many datapoints are within the milkyway
+```{r}
+ggplot(df, aes(x = d)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Density Plot of Distances", x = "Distance (pc)", y = "Density") +
+  xlim(0, 100000)
+
+ggplot(df, aes(x = d)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Density Plot of Distances", x = "Distance (pc)", y = "Density") +
+  xlim(0, 5.5e6)
+```
+
+Let's remove all data outside of 25,000 parsecs to get only stars within the milkyway
+```{r}
+data <- read.csv("star_data_e.csv")
+df <- na.omit(data)
+
+colnames(df) <- c("tmp", "mh", "logg", "mag", "ra", "dec", "par", "ra_e", "dec_e", "par_e")
+df$d <- 1000/df$par
+
+df <- df |> filter(d < 25000)
+
+df_no_error <- df |>
+  filter(ra_e <0.075, dec_e <0.075, par_e < 0.075)
+
+distance <- 1/(df$par/1000) #divide the parallax by 1000 to convert milliarcseconds to arcseconds
+
+# Convert RA and Dec to radians
+ra_rad <- df_no_error$ra*pi/180
+dec_rad <- df_no_error$dec*pi/180
+
+# Calculate xyz coordinates
+x <- distance * cos(dec_rad) * cos(ra_rad)
+y <- distance * cos(dec_rad) * sin(ra_rad)
+z <- distance * sin(dec_rad)
+
+p <- plot_ly(x = x, y = y, z = z, type = "scatter3d", mode = "markers", marker = list(size = 1.5, color = "yellow"))
+
+# Modify axis limits for 3D plot
+p <- p %>% layout(
+  scene = list(
+    bgcolor = 'black',
+    xaxis = list(range = c(-1e6, 1e6)),  # Set x-axis limits
+    yaxis = list(range = c(-5e6, 5e6)),  # Set y-axis limits
+    zaxis = list(range = c(-4e6, 4e6))   # Set z-axis limits
+  )
+)
+p
+```
+
+  
+  
+  
+  
+  
+  
+  
