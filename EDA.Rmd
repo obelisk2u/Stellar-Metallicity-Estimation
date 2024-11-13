@@ -4,6 +4,7 @@ library(scatterplot3d)
 library(plotly)
 library(car)
 library(caret)
+library(tidyr)
 set.seed(123)
 ```
 
@@ -188,7 +189,7 @@ df$d <- 1000/df$par
 df <- df |> filter(abs(d) < 25000)
 
 df_no_error <- df |>
-  filter(ra_e <0.02, dec_e <0.02, par_e < 0.02)
+  filter(ra_e <0.05, dec_e <0.05, par_e < 0.05)
 
 distance <- 1/(df_no_error$par/1000) #divide the parallax by 1000 to convert milliarcseconds to arcseconds
 
@@ -207,9 +208,9 @@ b <- plot_ly(x = x, y = y, z = z, type = "scatter3d", mode = "markers", marker =
 b <- b %>% layout(
   scene = list(
     bgcolor = 'black',
-    xaxis = list(range = c(-2e4, 2e4)),  # Set x-axis limits
-    yaxis = list(range = c(-2.5e4, 2.5e4)),  # Set y-axis limits
-    zaxis = list(range = c(-2e4, 2e4))   # Set z-axis limits
+    xaxis = list(range = c(-2e4, 0), title = "x (pc)"),  # Set x-axis limits
+    yaxis = list(range = c(-2.5e4, 1e4), title = "y (pc)"),  # Set y-axis limits
+    zaxis = list(range = c(-2e4, 1e3), title = "z (pc)")   # Set z-axis limits
   )
 )
 b
@@ -246,11 +247,43 @@ p <- p %>% layout(
 p
 ```
 
+MAKE CODE FOR GOOD DATASET
+```{r}
+data <- read.csv("star_data.csv")
+df <- na.omit(data)
+
+colnames(df) <- c("tmp", "mh", "logg", "mag", "ra", "dec", "par", "ra_e", "dec_e", "par_e", "logg_low", "logg_up", "mh_low", "mh_up","tmp_low", "tmp_up")
+
+#make confidence intervals for mh and logg
+df$int_mh <- df$mh_up - df$mh_low
+df$int_logg <- df$logg_up - df$logg_low
+df$int_tmp <- df$tmp_up - df$tmp_low
+
+#calculate distance
+df$d <- 1/(df$par/1000)
+
+#remove upper and lower bound columns for space efficiency
+df <- df |> 
+  select(-mh_low, -mh_up, -logg_up, -logg_low, -tmp_up, -tmp_low) |>
+  filter(d<25000)
+
+df_errors <- df |> select(int_mh, int_logg, int_tmp)
+
+df_errors <- df_errors %>%
+  pivot_longer(cols = everything(), names_to = "variable", values_to = "value")
+
+ggplot(df, aes(x = int_mh)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Error Intervals of mh and logg", x = "Distance (pc)", y = "Density") 
+  
+
+```
 
 conclusions:
 we found sweet spot of 500 stars
 we need to get less than 25000 parsecs to stay within the milkyway
-error of ra, dec and parallax now it makes sense
+error of ra, dec and parallax now it makes sense (0.05)
+there is many many observation lines, as shown as the very straight line
   
-  
+
   
