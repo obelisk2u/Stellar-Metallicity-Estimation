@@ -247,7 +247,7 @@ p <- p %>% layout(
 p
 ```
 
-MAKE CODE FOR GOOD DATASET
+TEST GMT ERROR INTERVALS
 ```{r}
 data <- read.csv("star_data.csv")
 df <- na.omit(data)
@@ -272,11 +272,52 @@ df_errors <- df |> select(int_mh, int_logg, int_tmp)
 df_errors <- df_errors %>%
   pivot_longer(cols = everything(), names_to = "variable", values_to = "value")
 
-ggplot(df, aes(x = int_mh)) +
-  geom_density(fill = "blue", alpha = 0.5) +
-  labs(title = "Error Intervals of mh and logg", x = "Distance (pc)", y = "Density") 
-  
+ggplot(df_errors, aes(x = value, color = variable, fill = variable)) +
+  geom_density(alpha = 0.3) +
+  labs(x = "Error Interval", y = "Density", title = "Density of gmt error intervals") +
+  xlim(0, 5) +
+  theme_minimal()
 
+summary(df$int_mh)
+summary(df$int_tmp)
+summary(df$int_logg)
+```
+
+BUILD CODE FOR GOOD DATASET
+```{r}
+data <- read.csv("star_data.csv")
+df <- na.omit(data)
+
+colnames(df) <- c("tmp", "mh", "logg", "mag", "ra", "dec", "par", "ra_e", "dec_e", "par_e", "logg_low", "logg_up", "mh_low", "mh_up","tmp_low", "tmp_up")
+
+#make confidence intervals for mh and logg
+df$int_mh <- df$mh_up - df$mh_low
+df$int_logg <- df$logg_up - df$logg_low
+df$int_tmp <- df$tmp_up - df$tmp_low
+
+#calculate distance
+df$d <- abs(1000/df$par)
+
+#convert apparent mag to absolute
+df$mag <- df$mag - 5*log10(df$d) + 5
+
+#calculate luminocity
+l_sun <- 3.828e26
+df$l <- l_sun * 10^((4.83-df$mag)/2.5)
+
+#extract coordinate data and corresponding errors
+coords <- df |>
+  filter(abs(d) < 25000, int_tmp < 24, int_mh < 0.0476, int_logg < 0.025) |>
+  select(ra, dec, par, par_e, dec_e, ra_e, d)
+
+#remove used columns for space efficiency
+df <- df |> 
+  filter(abs(d) < 25000, int_tmp < 24, int_mh < 0.0476, int_logg < 0.025, par_e < 0.0132) |>
+  select(tmp, d, mh, logg, mag, l) 
+
+# preproc_l <- preProcess(df, method = c("center", "scale"))
+# df <- predict(preproc_l, df)
+df <- df[sample(nrow(df), 300), ]
 ```
 
 conclusions:
@@ -284,6 +325,7 @@ we found sweet spot of 500 stars
 we need to get less than 25000 parsecs to stay within the milkyway
 error of ra, dec and parallax now it makes sense (0.05)
 there is many many observation lines, as shown as the very straight line
+cut interval errors off at 1st quartile: tmp = 24, mh = 0.0476, logg = 0.025
   
 
   
