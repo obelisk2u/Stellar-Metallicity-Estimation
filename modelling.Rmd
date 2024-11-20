@@ -17,7 +17,7 @@ read_data <- function() {
   #convert apparent mag to absolute
   df$mag <- df$mag - 5*log10(df$d) + 5
   
-  #calculate luminocity
+  #calculate luminosity
   l_sun <- 3.828e26
   df$l <- l_sun * 10^((4.83-df$mag)/2.5)
   
@@ -26,15 +26,23 @@ read_data <- function() {
     filter(abs(d) < 25000, int_tmp < 24, int_mh < 0.0476, int_logg < 0.025) |>
     select(ra, dec, par, par_e, dec_e, ra_e, d)
   
+  coords$ra_rad <- coords$ra*pi/180
+  coords$dec_rad <- coords$dec*pi/180
+  
+  coords$x <- coords$d * cos(coords$dec_rad) * cos(coords$ra_rad)
+  coords$y <- coords$d * cos(coords$dec_rad) * sin(coords$ra_rad)
+  coords$z <- coords$d * sin(coords$dec_rad)
+  
+  coords <- coords |> filter(z<0)
   #remove used columns for space efficiency
   df <- df |> 
     filter(abs(d) < 25000, int_tmp < 24, int_mh < 0.0476, int_logg < 0.025, par_e < 0.0132) |>
     select(tmp, d, mh, logg, mag, l) 
   
-  preproc_l <- preProcess(df, method = c("center", "scale"))
-  df <- predict(preproc_l, df)
-  df <- df[sample(nrow(df), 300), ]
-  
+  #preproc_l <- preProcess(df, method = c("center", "scale"))
+  #df <- predict(preproc_l, df)
+  coords <- coords[1:300,]
+
   return(df)
 }
 ```
@@ -47,7 +55,7 @@ model_l <- lm(mh ~ d + tmp + logg + mag + l, data = df)
 summary(model_l)
 ```
 
-
+NEED TO GET MORE PREDICTORS
 
 
 

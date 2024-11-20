@@ -310,6 +310,14 @@ coords <- df |>
   filter(abs(d) < 25000, int_tmp < 24, int_mh < 0.0476, int_logg < 0.025) |>
   select(ra, dec, par, par_e, dec_e, ra_e, d)
 
+coords$ra_rad <- coords$ra*pi/180
+coords$dec_rad <- coords$dec*pi/180
+
+coords$x <- coords$d * cos(coords$dec_rad) * cos(coords$ra_rad)
+coords$y <- coords$d * cos(coords$dec_rad) * sin(coords$ra_rad)
+coords$z <- coords$d * sin(coords$dec_rad)
+
+coords <- coords |> filter(z<0)
 #remove used columns for space efficiency
 df <- df |> 
   filter(abs(d) < 25000, int_tmp < 24, int_mh < 0.0476, int_logg < 0.025, par_e < 0.0132) |>
@@ -317,7 +325,29 @@ df <- df |>
 
 # preproc_l <- preProcess(df, method = c("center", "scale"))
 # df <- predict(preproc_l, df)
-df <- df[sample(nrow(df), 300), ]
+df <- df[1:300,]
+coords <- coords[1:300,]
+
+b <- plot_ly(x = coords$x, y = coords$y, z = coords$z, type = "scatter3d", mode = "markers", marker = list(size = 1.5, color = "yellow"))
+
+#3D PLOT OF STARS USED
+b <- b %>% layout(
+  scene = list(
+    bgcolor = 'black',
+    xaxis = list(range = c(-1e4, -100), title = "x (pc)"),  # Set x-axis limits
+    yaxis = list(range = c(-1100, 6000), title = "y (pc)"),  # Set y-axis limits
+    zaxis = list(range = c(-12000, 1300), title = "z (pc)")   # Set z-axis limits
+  )
+)
+b
+
+paste("Range of luminocity values:",min(df$l), max(df$l))
+df$l <- (df$l/1e25)
+df$logl <- log(df$l)
+  
+  ggplot(df, aes(x = logl)) + 
+    geom_histogram(fill = "blue", color = "black") + 
+    labs(title = "Histogram of Log-Luminocity", x = "Values", y = "Frequency")
 ```
 
 conclusions:
@@ -326,6 +356,8 @@ we need to get less than 25000 parsecs to stay within the milkyway
 error of ra, dec and parallax now it makes sense (0.05)
 there is many many observation lines, as shown as the very straight line
 cut interval errors off at 1st quartile: tmp = 24, mh = 0.0476, logg = 0.025
+luminocity is an extremely right skewed graph
+
   
 
   
