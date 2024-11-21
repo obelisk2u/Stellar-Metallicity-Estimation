@@ -1,11 +1,17 @@
+```{r}
+library(dplyr)
+library(caret)
+```
+
+
 Load data function
 ```{r}
 read_data <- function() {
-  data <- read.csv("star_data.csv")
+  data <- read.csv("./data/star_data.csv")
   df <- na.omit(data)
   
-  colnames(df) <- c("tmp", "mh", "logg", "mag", "ra", "dec", "par", "ra_e", "dec_e", "par_e", "logg_low", "logg_up", "mh_low", "mh_up","tmp_low", "tmp_up")
-  
+  colnames(df) <- c("tmp", "mh", "logg", "mag", "ra", "dec", "par", "ra_e", "dec_e", "par_e", "logg_low", "logg_up", "mh_low", "mh_up","tmp_low", "tmp_up", "blue_mag", "red_mag", "rad_vel")
+
   #make confidence intervals for mh and logg
   df$int_mh <- df$mh_up - df$mh_low
   df$int_logg <- df$logg_up - df$logg_low
@@ -37,10 +43,10 @@ read_data <- function() {
   #remove used columns for space efficiency
   df <- df |> 
     filter(abs(d) < 25000, int_tmp < 24, int_mh < 0.0476, int_logg < 0.025, par_e < 0.0132) |>
-    select(tmp, d, mh, logg, mag, l) 
+    select(tmp, d, mh, logg, mag, l, blue_mag, red_mag, rad_vel) 
   
-  #preproc_l <- preProcess(df, method = c("center", "scale"))
-  #df <- predict(preproc_l, df)
+  # preproc_l <- preProcess(df, method = c("center", "scale"))
+  # df <- predict(preproc_l, df)
   coords <- coords[1:300,]
 
   return(df)
@@ -51,7 +57,7 @@ Run Linear Model
 
 ```{r}
 df<-read_data()
-model_l <- lm(mh ~ d + tmp + logg + mag + l, data = df)
+model_l <- lm(mh ~ d + tmp + logg + mag + l + blue_mag + red_mag + rad_vel, data = df)
 summary(model_l)
 ```
 

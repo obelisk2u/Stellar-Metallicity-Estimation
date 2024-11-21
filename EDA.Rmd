@@ -16,7 +16,7 @@ UNITS:
 
 Lets convert the polar coordinates to cartesian
 ```{r}
-data <- read.csv("star_data_coords.csv")
+data <- read.csv("./data/star_data_coords.csv")
 df <- na.omit(data)
 
 colnames(df) <- c("d", "tmp", "mh", "logg", "mag", "ra", "dec", "par")
@@ -61,7 +61,7 @@ p
 
 Take errors into account
 ```{r}
-data <- read.csv("star_data_e.csv")
+data <- read.csv("./data/star_data_e.csv")
 df <- na.omit(data)
 
 colnames(df) <- c("tmp", "mh", "logg", "mag", "ra", "dec", "par", "ra_e", "dec_e", "par_e")
@@ -130,7 +130,7 @@ p
   
   
 ```{r}
-data <- read.csv("star_data_coords.csv")
+data <- read.csv("./data/star_data_coords.csv")
 df <- na.omit(data)
 
 colnames(df) <- c("d", "tmp", "mh", "logg", "mag", "ra", "dec", "par")
@@ -180,7 +180,7 @@ ggplot(df, aes(x = d)) +
 
 Let's remove all data outside of 25,000 parsecs to get only stars within the milkyway
 ```{r}
-data <- read.csv("star_data_e.csv")
+data <- read.csv("./data/star_data_e.csv")
 df <- na.omit(data)
 
 colnames(df) <- c("tmp", "mh", "logg", "mag", "ra", "dec", "par", "ra_e", "dec_e", "par_e")
@@ -249,7 +249,7 @@ p
 
 TEST GMT ERROR INTERVALS
 ```{r}
-data <- read.csv("star_data.csv")
+data <- read.csv("./data/star_data.csv")
 df <- na.omit(data)
 
 colnames(df) <- c("tmp", "mh", "logg", "mag", "ra", "dec", "par", "ra_e", "dec_e", "par_e", "logg_low", "logg_up", "mh_low", "mh_up","tmp_low", "tmp_up")
@@ -285,7 +285,7 @@ summary(df$int_logg)
 
 BUILD CODE FOR GOOD DATASET
 ```{r}
-data <- read.csv("star_data.csv")
+data <- read.csv("./data/star_data.csv")
 df <- na.omit(data)
 
 colnames(df) <- c("tmp", "mh", "logg", "mag", "ra", "dec", "par", "ra_e", "dec_e", "par_e", "logg_low", "logg_up", "mh_low", "mh_up","tmp_low", "tmp_up")
@@ -347,11 +347,10 @@ df$logl <- log(df$l)
   
   ggplot(df, aes(x = logl)) + 
     geom_histogram(fill = "blue", color = "black") + 
-    labs(title = "Histogram of Log-Luminocity", x = "Values", y = "Frequency")
+    labs(title = "Histogram of Log-Luminosity", x = "Values", y = "Frequency")
 ```
 
 conclusions:
-we found sweet spot of 500 stars
 we need to get less than 25000 parsecs to stay within the milkyway
 error of ra, dec and parallax now it makes sense (0.05)
 there is many many observation lines, as shown as the very straight line
