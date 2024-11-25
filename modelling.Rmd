@@ -70,18 +70,13 @@ ggplot(df, aes(x = mag, y = mh)) +
   se = TRUE)
 ```
 
+Create Binary Classification
+```{r}
+df <- read_data()
+df$bin <- factor(ifelse(df$mh > -0.2212, 1, 0))
 
 
-
-
-
-
-
-
-
-
-
-
+```
 
 
 
