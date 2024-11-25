@@ -2,7 +2,7 @@
 library(dplyr)
 library(caret)
 library(lme4)
-
+set.seed(123)
 ```
 
 
@@ -47,10 +47,9 @@ read_data <- function() {
     filter(abs(d) < 25000, int_tmp < 24, int_mh < 0.0476, int_logg < 0.025, par_e < 0.0132) |>
     select(tmp, d, mh, logg, mag, l, blue_mag, red_mag, rad_vel) 
   
-  # preproc_l <- preProcess(df, method = c("center", "scale"))
-  # df <- predict(preproc_l, df)
+  #preproc_l <- preProcess(df, method = c("center", "scale"))
+  #df <- predict(preproc_l, df)
   coords <- coords[1:300,]
-
   return(df)
 }
 ```
@@ -61,7 +60,33 @@ Run Linear Model
 df<-read_data()
 model_l <- lm(mh ~ d + tmp + logg + mag + l + blue_mag + red_mag + rad_vel, data = df)
 summary(model_l)
+
+ggplot(df, aes(x = mag, y = mh)) +
+  geom_point() +     
+  labs(x = 'Temperature (K)', y='Metallicity [Fe/H]', title = 'Linear Relationship Between Temperature and Metallicity') +
+  geom_smooth(method = "lm",         
+  formula = y ~ x,       
+  color = "blue",         
+  se = TRUE)
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Create hierarchy
 ```{r}
@@ -96,6 +121,10 @@ ggplot(df, aes(x = mh, fill = levels)) +
 
 
 https://www.sciencedirect.com/science/article/pii/S2213133715000360
+https://arxiv.org/pdf/1707.05834    
+https://ned.ipac.caltech.edu/level5/Wall2/Wal3_1.html
+1929 paper
+
 
 
 
