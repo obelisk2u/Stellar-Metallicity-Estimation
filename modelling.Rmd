@@ -2,6 +2,7 @@
 library(dplyr)
 library(caret)
 library(lme4)
+library(rstanarm)
 set.seed(123)
 ```
 
@@ -49,6 +50,7 @@ read_data <- function() {
   
   #preproc_l <- preProcess(df, method = c("center", "scale"))
   #df <- predict(preproc_l, df)
+  #df <- df[1:50,]
   coords <- coords[1:300,]
   return(df)
 }
@@ -70,11 +72,17 @@ ggplot(df, aes(x = mag, y = mh)) +
   se = TRUE)
 ```
 
-Create Binary Classification
+Create Binary Classification and Run Logistic Regression
 ```{r}
 df <- read_data()
-df$bin <- factor(ifelse(df$mh > -0.2212, 1, 0))
+df$mh_bin <- factor(ifelse(df$mh > -0.2212, 1, 0))
 
+model_log <- glm(mh_bin ~ d + tmp + logg + mag + l + blue_mag + red_mag + rad_vel, data = df, family = binomial(link = "logit"))
+summary(model_log)
+
+ggplot(df, aes(x=tmp, y=mh_bin)) + 
+  geom_point() +
+  labs(y = 'Binary Metallicity [Fe/H]', x ='Temperature (K)', title = 'Temperature vs. Binary Metallicity (Above -0.22)')
 
 ```
 
@@ -118,8 +126,10 @@ ggplot(df, aes(x = mh, fill = levels)) +
 https://www.sciencedirect.com/science/article/pii/S2213133715000360
 https://arxiv.org/pdf/1707.05834    
 https://ned.ipac.caltech.edu/level5/Wall2/Wal3_1.html
-1929 paper
-
+1929 paper [citation 1]
+https://academic.oup.com/mnras/article/484/2/2341/5288001 statistical properties of stars metllicity
+https://www.aanda.org/articles/aa/full_html/2022/11/aa40995-21/aa40995-21.html#F4 
+https://www.aanda.org/articles/aa/full_html/2021/06/aa40536-21/aa40536-21.html#:~:text=At%20low%20temperatures%2C%20the%20opacity,4. [citation 2]
 
 
 
