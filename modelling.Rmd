@@ -121,15 +121,32 @@ summary(model_lme)
 AIC(model_l, model_lme)
 BIC(model_l, model_lme)
 
+#check distribution of metallicity across distances
 df$levels<-factor(df$levels)
 ggplot(df, aes(x = mh, fill = levels)) +
   geom_density(alpha = 0.5) +  # alpha for transparency
   labs(title = "Distribution of Metallicity Values Grouped by Distance", x = "Metallicity", y = "Density") +
   scale_fill_manual(values = c("red", "blue", "green", "purple")) +
   theme_minimal()
+
+#plot residuals
+residuals <- resid(model_lme)
+fitted_values <- fitted(model_lme)
+ggplot(data = data.frame(Fitted = fitted_values, Residuals = residuals), aes(x = Fitted, y = Residuals)) +
+  geom_point(color = "blue") +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Linear Mixed Model Residual Plot", x = "Fitted Values", y = "Residuals") +
+  theme_minimal()
+
+#Random scatter around 0 (no clear pattern) to indicate linearity. No funnel shape (homoscedasticity).
+qqnorm(residuals, main = "Q-Q Plot of Residuals for LMM")
+qqline(residuals, col = "red", lwd = 2)
 ```
 
 Hierarchical Linear Model
+```{r}
+
+```
 
 
 https://www.sciencedirect.com/science/article/pii/S2213133715000360
