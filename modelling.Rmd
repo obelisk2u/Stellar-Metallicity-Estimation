@@ -4,6 +4,7 @@ library(caret)
 library(lme4)
 library(rstanarm)
 library(ggcorrplot)
+library(car)
 set.seed(123)
 ```
 
@@ -85,9 +86,22 @@ ggplot(df, aes(x=tmp, y=mh_bin)) +
   geom_point() +
   labs(y = 'Binary Metallicity [Fe/H]', x ='Temperature (K)', title = 'Temperature vs. Binary Metallicity (Above -0.22)')
 
-model_null_log <- glm(mh_bin ~ 1, data = df, family = binomial(link = "logit"))
-lrtest_result <- anova(model_null_log, model_log, test = "Chisq")
-print(lrtest_result)
+#plot residuals
+plot(residuals(model_log, type = "pearson"))
+
+#Predictions
+predictions <- predict(model_log, type = "response")
+predicted_class <- ifelse(predictions > 0.5, 1, 0)
+table(df$mh_bin, predicted_class)
+
+#check for dispersion
+dispersion <- sum(residuals(model_log, type = "pearson")^2) / model_log$df.residual
+print(dispersion)
+
+#run quasibinomial because dispersion is slightly higher than 1
+model <- glm(mh_bin ~ d + tmp + mag + l + rad_vel, family = quasibinomial, data = df)
+summary(model)
+summary(model_log)
 
 ```
 
