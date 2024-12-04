@@ -5,6 +5,7 @@ library(lme4)
 library(rstanarm)
 library(ggcorrplot)
 library(car)
+library(robust)
 set.seed(123)
 ```
 
@@ -103,6 +104,10 @@ model <- glm(mh_bin ~ d + tmp + mag + l + rad_vel, family = quasibinomial, data 
 summary(model)
 summary(model_log)
 
+#confusion matrix for quasibinomial
+predictions <- predict(model, type = "response")
+predicted_class <- ifelse(predictions > 0.5, 1, 0)
+table(df$mh_bin, predicted_class)
 ```
 
 Check for Multicollinearity
