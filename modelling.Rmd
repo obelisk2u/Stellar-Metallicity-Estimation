@@ -194,18 +194,42 @@ df$levels <- ifelse(df$d > 331.28 & df$d <= 471.47, 1, df$levels)
 df$levels <- ifelse(df$d > 471.47 & df$d <= 654.54, 2, df$levels)
 df$levels <- ifelse(df$d > 653.54, 3, df$levels)
 levels <- factor(df$levels)
+df <- df |> select(-levels)
 ```
 
 Multilevel linear models
 ```{r}
-#complete pooling (jut regular linear regression)
-model_l <- lm(mh ~ d + tmp + mag + l + rad_vel, data = df)
+preproc_l <- preProcess(df, method = c("center", "scale"))
+df_norm <- predict(preproc_l, df)
+df_norm <- cbind(df_norm, levels)
+#complete pooling (just regular linear regression)
+model_c <- lm(mh ~ d + tmp + mag + l + rad_vel, data = df)
+predictions_c <- predict(model_c)
+residuals_c <- df$mh - predictions_c
+squared_residuals_c <- residuals_c^2
+mse_c <- mean(squared_residuals_c)
+mse_c
 
 #partial pooling
+model_p <- lmer(mh ~ d + tmp + mag + l + rad_vel + (1|levels), data = df_norm)
+predictions_p <- predict(model_p)
+residuals_p <- df$mh - predictions_p
+squared_residuals_p <- residuals_p^2
+mse_p <- mean(squared_residuals_p)
+mse_p
 
-
+#no pooling
+model_n <- lm(mh ~ d + tmp + mag + l + rad_vel + levels - 1, data = df)
+predictions_n <- predict(model_n)
+residuals_n <- df$mh - predictions_n
+squared_residuals_n <- residuals_n^2
+mse_n <- mean(squared_residuals_n)
+mse_n
 
 ```
+
+
+
 
 
 https://www.sciencedirect.com/science/article/pii/S2213133715000360
