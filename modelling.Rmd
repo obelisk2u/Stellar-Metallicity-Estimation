@@ -63,8 +63,22 @@ Run Linear Model
 ```{r}
 df<-read_data()
 model_l <- lm(mh ~ d + tmp + mag + l + rad_vel, data = df)
-summary(model_l)
+qqnorm(residuals(model_l))
+qqline(residuals(model_l), col = "red")
+hist(residuals(model_l), main = "Histogram of Linear Model Residuals", xlab = "Residuals", xlim = c(-1, 1),breaks = 20)
 
+plot(fitted(model_l), residuals(model_l), 
+     main = 'Residuals vs. Fitted Values: Checking for Linearity',
+     xlab = 'Fitted Values',
+     ylab = 'Residuals')
+abline(h = 0, col = "red", lwd = 2)
+
+
+library(lmtest)
+
+summary(model_l)
+dwtest(model_l)
+bptest(model_l)
 ggplot(df, aes(x = mag, y = mh)) +
   geom_point() +     
   labs(x = 'Temperature (K)', y='Metallicity [Fe/H]', title = 'Linear Relationship Between Temperature and Metallicity') +
@@ -73,6 +87,18 @@ ggplot(df, aes(x = mag, y = mh)) +
   color = "blue",         
   se = TRUE)
 shapiro.test(model_l$residuals)
+
+#calculate MSE
+observed <- df$mh
+predicted <- predict(model_l)
+mse <- mean((observed - predicted)^2)
+print(mse)
+
+#calculate null mse
+observed <- df$mh
+mean_y <- mean(observed)
+null_mse <- mean((observed - mean_y)^2)
+print(null_mse)
 ```
 
 Create Binary Classification and Run Logistic Regression
@@ -88,12 +114,16 @@ ggplot(df, aes(x=tmp, y=mh_bin)) +
   labs(y = 'Binary Metallicity [Fe/H]', x ='Temperature (K)', title = 'Temperature vs. Binary Metallicity (Above -0.22)')
 
 #plot residuals
+residuals <- residuals(model_log, type = "pearson")
 plot(residuals(model_log, type = "pearson"))
 
 #Predictions
 predictions <- predict(model_log, type = "response")
 predicted_class <- ifelse(predictions > 0.5, 1, 0)
 table(df$mh_bin, predicted_class)
+
+#check that continuous predictors should have a linear relationship with the log-odds
+plot(df$tmp, residuals, main = "Residuals vs Predictor1", xlab = "Predictor1", ylab = "Residuals")
 
 #check for dispersion
 dispersion <- sum(residuals(model_log, type = "pearson")^2) / model_log$df.residual
@@ -117,15 +147,6 @@ ggcorrplot(corr_matrix, lab = TRUE)
 vif(model_log)
 ```
 
-Create hierarchy
-```{r}
-summary(df$d)
-df$levels <- 0
-df$levels <- ifelse(df$d > 331.28 & df$d <= 471.47, 1, df$levels)
-df$levels <- ifelse(df$d > 471.47 & df$d <= 654.54, 2, df$levels)
-df$levels <- ifelse(df$d > 653.54, 3, df$levels)
-levels <- factor(df$levels)
-```
 
 
 Run Linear Mixed Effects Model
@@ -162,8 +183,27 @@ qqnorm(residuals, main = "Q-Q Plot of Residuals for LMM")
 qqline(residuals, col = "red", lwd = 2)
 ```
 
-Hierarchical Linear Model
+
+
+Create hierarchy
 ```{r}
+df <-read_data()
+summary(df$d)
+df$levels <- 0
+df$levels <- ifelse(df$d > 331.28 & df$d <= 471.47, 1, df$levels)
+df$levels <- ifelse(df$d > 471.47 & df$d <= 654.54, 2, df$levels)
+df$levels <- ifelse(df$d > 653.54, 3, df$levels)
+levels <- factor(df$levels)
+```
+
+Multilevel linear models
+```{r}
+#complete pooling (jut regular linear regression)
+model_l <- lm(mh ~ d + tmp + mag + l + rad_vel, data = df)
+
+#partial pooling
+
+
 
 ```
 
