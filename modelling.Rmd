@@ -79,11 +79,12 @@ library(lmtest)
 summary(model_l)
 dwtest(model_l)
 bptest(model_l)
-ggplot(df, aes(x = mag, y = mh)) +
+ggplot(df, aes(x = d, y = mh)) +
   geom_point() +     
-  labs(x = 'Temperature (K)', y='Metallicity [Fe/H]', title = 'Linear Relationship Between Temperature and Metallicity') +
+  labs(x = 'Distance (pc)', y='Metallicity [Fe/H]', title = 'Linear Relationship Between Distance and Metallicity') +
+  xlim(0,1500) +
   geom_smooth(method = "lm",         
-  formula = y ~ x,       
+  formula = y ~ x,
   color = "blue",         
   se = TRUE)
 shapiro.test(model_l$residuals)
@@ -225,7 +226,6 @@ residuals_n <- df$mh - predictions_n
 squared_residuals_n <- residuals_n^2
 mse_n <- mean(squared_residuals_n)
 mse_n
-
 ```
 
 
